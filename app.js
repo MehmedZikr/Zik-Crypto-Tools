@@ -1,129 +1,86 @@
-const cryptoList = {
-  bitcoin:'BTC', ethereum:'ETH', solana:'SOL', tether:'USDT', binancecoin:'BNB', hyperliquid:'HYPE', 'usd-coin':'USDC', ripple:'XRP', cardano:'ADA', dogecoin:'DOGE'
-};
-const fiatList = ['IDR','USD','EUR','JPY','SGD','MYR','GBP','AUD','SAR','AED','TRY','CNY','KRW'];
-let prices = {};
-let fiatRates = {};
-const fmtIDR = n => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
-const fmt = (n,d=4)=> new Intl.NumberFormat('id-ID',{maximumFractionDigits:d}).format(Number(n)||0);
-function fillSelects(){
-  const ca=document.getElementById('cryptoAsset'), pa=document.getElementById('portfolioAsset');
-  Object.entries(cryptoList).forEach(([id,s])=>{ ca.add(new Option(s,id)); pa.add(new Option(s,id)); });
-  const ff=document.getElementById('fiatFrom'), ft=document.getElementById('fiatTo');
-  fiatList.forEach(c=>{ff.add(new Option(c,c)); ft.add(new Option(c,c));}); ff.value='USD'; ft.value='IDR';
+const $ = (id) => document.getElementById(id);
+const fmtIDR = (n) => new Intl.NumberFormat('id-ID',{style:'currency',currency:'IDR',maximumFractionDigits:0}).format(Number(n)||0);
+const fmtUSD = (n) => new Intl.NumberFormat('en-US',{style:'currency',currency:'USD',maximumFractionDigits:2}).format(Number(n)||0);
+const fmtCoin = (n) => new Intl.NumberFormat('en-US',{maximumFractionDigits:8}).format(Number(n)||0);
+const now = () => new Date().toLocaleString('id-ID');
+let prices = {bitcoin:{idr:0,usd:0}, ethereum:{idr:0,usd:0}, solana:{idr:0,usd:0}, tether:{idr:17790,usd:1}};
+let history = JSON.parse(localStorage.getItem('zik_history')||'[]');
+let holdings = JSON.parse(localStorage.getItem('zik_holdings')||'[]');
+
+function save(){localStorage.setItem('zik_history',JSON.stringify(history));localStorage.setItem('zik_holdings',JSON.stringify(holdings));}
+function metric(k,v,cls=''){return `<div class="metric"><span>${k}</span><strong class="${cls}">${v}</strong></div>`}
+function addHistory(type, data){history.unshift({type,time:now(),data}); history=history.slice(0,80); save(); renderHistory();}
+
+async function fetchJson(url, timeout=8000){
+  const ctrl = new AbortController(); const t=setTimeout(()=>ctrl.abort(),timeout);
+  try{const r=await fetch(url,{signal:ctrl.signal,cache:'no-store'}); if(!r.ok) throw new Error(r.status); return await r.json();}
+  finally{clearTimeout(t)}
 }
-async function fetchJson(url){
-  const res = await fetch(url, { cache: 'no-store' });
-  if(!res.ok) throw new Error(`HTTP ${res.status}`);
-  return await res.json();
-}
-async function fetchFiatRates(){
-  // Primary: open.er-api.com supports IDR and many world currencies without API key.
+async function refreshPrices(){
+  $('statusText').textContent='Mengambil data...';
   try{
-    const data = await fetchJson('https://open.er-api.com/v6/latest/USD');
-    if(data && data.rates && data.rates.IDR){
-      fiatRates = { USD: 1, ...data.rates };
-      return true;
-    }
-  }catch(e){}
-  // Fallback: Frankfurter does not always include every currency, so keep IDR from USDT if needed.
-  try{
-    const data = await fetchJson('https://api.frankfurter.app/latest?from=USD');
-    fiatRates = { USD: 1, ...data.rates };
-    return true;
-  }catch(e){}
-  return false;
-}
-async function fetchCryptoFromCoinGecko(){
-  const ids=Object.keys(cryptoList).join(',');
-  const data = await fetchJson(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=idr,usd,eur,jpy,sgd,myr&include_24hr_change=true`);
-  if(!data || !data.bitcoin) throw new Error('CoinGecko empty');
-  prices = data;
-  return true;
-}
-async function fetchCryptoFromBinance(){
-  const symbolMap = {
-    bitcoin:'BTCUSDT', ethereum:'ETHUSDT', solana:'SOLUSDT', tether:'USDTUSDT',
-    binancecoin:'BNBUSDT', 'usd-coin':'USDCUSDT', ripple:'XRPUSDT', cardano:'ADAUSDT', dogecoin:'DOGEUSDT'
-  };
-  const symbols = encodeURIComponent(JSON.stringify(Object.values(symbolMap).filter(s=>s!=='USDTUSDT')));
-  const data = await fetchJson(`https://api.binance.com/api/v3/ticker/24hr?symbols=${symbols}`);
-  const idr = fiatRates.IDR || 16000;
-  const out = {};
-  Object.entries(symbolMap).forEach(([id,sym])=>{
-    if(sym==='USDTUSDT'){
-      out[id] = { usd:1, idr:idr, eur:1/(fiatRates.EUR||1), jpy:fiatRates.JPY||0, sgd:fiatRates.SGD||0, myr:fiatRates.MYR||0, usd_24h_change:0 };
-      return;
-    }
-    const row = data.find(x=>x.symbol===sym);
-    if(row){
-      const usd = Number(row.lastPrice);
-      out[id] = {
-        usd,
-        idr: usd*idr,
-        eur: usd*(fiatRates.EUR||0),
-        jpy: usd*(fiatRates.JPY||0),
-        sgd: usd*(fiatRates.SGD||0),
-        myr: usd*(fiatRates.MYR||0),
-        usd_24h_change: Number(row.priceChangePercent)
-      };
-    }
-  });
-  if(!out.bitcoin) throw new Error('Binance empty');
-  prices = { ...prices, ...out };
-  return true;
-}
-async function fetchRates(){
-  const status = document.getElementById('rateStatus');
-  try{
-    status.textContent='Mengambil data market real-time...';
-    const fiatOk = await fetchFiatRates();
-    let cryptoOk = false;
-    try{ cryptoOk = await fetchCryptoFromCoinGecko(); }catch(e){}
-    if(!cryptoOk){ try{ cryptoOk = await fetchCryptoFromBinance(); }catch(e){} }
-    if(prices.tether?.idr && !fiatRates.IDR) fiatRates.IDR = prices.tether.idr;
-    const btcIdr=prices.bitcoin?.idr; if(btcIdr) document.getElementById('dcaBtcPrice').value=Math.round(btcIdr);
-    document.getElementById('lastUpdated').textContent=new Date().toLocaleString('id-ID');
-    if(cryptoOk && fiatOk) status.textContent='Data market aktif';
-    else if(cryptoOk) status.textContent='Data crypto aktif, kurs fiat fallback';
-    else if(fiatOk) status.textContent='Kurs fiat aktif, data crypto belum tersedia';
-    else status.textContent='Gagal ambil data. Cek internet lalu refresh.';
+    const cg = await fetchJson('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,tether&vs_currencies=idr,usd');
+    ['bitcoin','ethereum','solana','tether'].forEach(a=>{ if(cg[a]) prices[a]=cg[a]; });
+    $('statusText').textContent='Live: CoinGecko';
   }catch(e){
-    status.textContent='Gagal ambil data. Cek internet lalu refresh.';
+    try{
+      const b = await fetchJson('https://api.binance.com/api/v3/ticker/price?symbols=[%22BTCUSDT%22,%22ETHUSDT%22,%22SOLUSDT%22]');
+      const er = await fetchJson('https://open.er-api.com/v6/latest/USD');
+      const usdIdr = er.rates?.IDR || prices.tether.idr || 17790;
+      const map = Object.fromEntries(b.map(x=>[x.symbol,Number(x.price)]));
+      prices = {bitcoin:{usd:map.BTCUSDT,idr:map.BTCUSDT*usdIdr},ethereum:{usd:map.ETHUSDT,idr:map.ETHUSDT*usdIdr},solana:{usd:map.SOLUSDT,idr:map.SOLUSDT*usdIdr},tether:{usd:1,idr:usdIdr}};
+      $('statusText').textContent='Live: Binance + FX';
+    }catch(err){$('statusText').textContent='Offline / API limit. Pakai data terakhir.';}
   }
+  $('btcPrice').textContent=fmtIDR(prices.bitcoin.idr); $('btcUsd').textContent=fmtUSD(prices.bitcoin.usd);
+  $('solPrice').textContent=fmtIDR(prices.solana.idr); $('solUsd').textContent=fmtUSD(prices.solana.usd);
+  $('ethPrice').textContent=fmtIDR(prices.ethereum.idr); $('ethUsd').textContent=fmtUSD(prices.ethereum.usd);
+  $('usdtIdr').textContent=fmtIDR(prices.tether.idr);
+  $('profitRate').value = Math.round(prices.tether.idr || $('profitRate').value);
+  $('convRate').value = Math.round(prices.tether.idr || $('convRate').value);
+  $('dcaPrice').value = Math.round(prices.bitcoin.idr || $('dcaPrice').value);
+  calcProfit(false); calcPintu(false); calcUsdt(false); calcDca(false); renderPortfolio();
 }
-function show(html,id){document.getElementById(id).innerHTML=html;}
-function calcProfit(){
-  const capital=+profitCapital.value, fx=+profitFx.value, buy=+profitBuy.value, sell=+profitSell.value, bf=+profitBuyFee.value/100, sf=+profitSellFee.value/100;
-  const usd=capital/fx; const coin=(usd*(1-bf))/buy; const gross=coin*sell*fx; const net=gross*(1-sf); const profit=net-capital; const pct=profit/capital*100;
-  show(`Coin didapat: <b>${fmt(coin,8)}</b><br>Hasil jual bersih: <b>${fmtIDR(net)}</b><br>Profit/Loss: <b class='${profit>=0?'positive':'negative'}'>${fmtIDR(profit)} (${fmt(pct,2)}%)</b>`,'profitResult');
+
+function calcProfit(store=false){
+  const cap=+$('profitCapital').value, rate=+$('profitRate').value, buy=+$('profitBuy').value, sell=+$('profitSell').value, bf=+$('profitBuyFee').value/100, sf=+$('profitSellFee').value/100;
+  const buyUsd=cap/rate, qty=(buyUsd*(1-bf))/buy, gross=qty*sell*rate, net=gross*(1-sf), profit=net-cap, pct=cap?profit/cap*100:0;
+  $('profitResult').innerHTML=metric('Jumlah koin didapat',fmtCoin(qty))+metric('Nilai jual bersih',fmtIDR(net))+metric('Profit / Loss',`${fmtIDR(profit)} (${pct.toFixed(2)}%)`,profit>=0?'pos':'neg');
+  if(store) addHistory('Profit Spot',{cap,rate,buy,sell,profit,net,pct});
 }
-function convertCrypto(){
-  const id=cryptoAsset.value, fiat=cryptoFiat.value.toLowerCase(), amount=+cryptoAmount.value; const price=prices[id]?.[fiat];
-  show(price?`${fmt(amount,8)} ${cryptoList[id]} = <b>${fiat.toUpperCase()} ${fmt(amount*price, fiat==='idr'?0:2)}</b><br><small>Per 1 ${cryptoList[id]} ≈ ${fiat.toUpperCase()} ${fmt(price, fiat==='idr'?0:2)}</small>`:'Data belum tersedia, tekan refresh.','cryptoResult');
+function calcPintu(store=false){
+  const cap=+$('pintuCapital').value, buy=+$('pintuBuy').value, sell=+$('pintuSell').value, cfx=+$('pintuCfx').value/100, tax=+$('pintuTax').value/100;
+  const afterBuy=cap*(1-cfx), qty=afterBuy/buy, gross=qty*sell, net=gross*(1-tax), mid=(buy+sell)/2, portfolio=qty*mid, profit=net-cap, pct=cap?profit/cap*100:0, spread=sell-buy;
+  $('pintuResult').innerHTML=metric('Aset didapat',fmtCoin(qty))+metric('Spread buy/sell',fmtIDR(spread))+metric('Portfolio mid price',fmtIDR(portfolio))+metric('Diterima setelah pajak',fmtIDR(net))+metric('Profit / Loss bersih',`${fmtIDR(profit)} (${pct.toFixed(2)}%)`,profit>=0?'pos':'neg');
+  if(store) addHistory('Simulasi Pintu',{cap,buy,sell,qty,net,profit,pct});
 }
-function convertFiat(){
-  const amount=+fiatAmount.value, from=fiatFrom.value, to=fiatTo.value;
-  const usd= amount / (fiatRates[from]||1); const result= usd * (fiatRates[to]||1);
-  show(`${fmt(amount,2)} ${from} = <b>${fmt(result, to==='IDR'?0:2)} ${to}</b>`,'fiatResult');
+function calcUsdt(store=false){
+  const amount=+$('convAmount').value, rate=+$('convRate').value, fee=+$('convFee').value/100, dir=$('convDirection').value;
+  const gross = dir==='usdt-idr' ? amount*rate : amount/rate; const net = gross*(1-fee);
+  $('usdtResult').innerHTML=metric('Hasil kotor',dir==='usdt-idr'?fmtIDR(gross):`${fmtCoin(gross)} USDT`)+metric('Hasil bersih',dir==='usdt-idr'?fmtIDR(net):`${fmtCoin(net)} USDT`);
+  if(store) addHistory('USDT Converter',{amount,rate,dir,net});
 }
-function calcDca(){
-  const m=+dcaMonthly.value, months=+dcaMonths.value, price=+dcaBtcPrice.value, growth=+dcaGrowth.value/100;
-  const total=m*months, btc=total/price, futurePrice=price*(1+growth), future=btc*futurePrice, profit=future-total;
-  show(`Total modal: <b>${fmtIDR(total)}</b><br>Estimasi BTC terkumpul: <b>${fmt(btc,8)} BTC</b><br>Nilai masa depan: <b>${fmtIDR(future)}</b><br>Estimasi hasil: <b class='${profit>=0?'positive':'negative'}'>${fmtIDR(profit)}</b>`,'dcaResult');
+function calcDca(store=false){
+  const amount=+$('dcaAmount').value, periods=+$('dcaPeriods').value, price=+$('dcaPrice').value, move=+$('dcaMove').value/100;
+  const total=amount*periods, btc= price ? total/price : 0, future=price*(1+move), value=btc*future, pnl=value-total;
+  $('dcaResult').innerHTML=metric('Total modal DCA',fmtIDR(total))+metric('Estimasi BTC terkumpul',`${fmtCoin(btc)} BTC`)+metric('Estimasi nilai akhir',fmtIDR(value))+metric('Estimasi profit/loss',fmtIDR(pnl),pnl>=0?'pos':'neg');
+  if(store) addHistory('BTC DCA',{amount,periods,price,btc,value,pnl});
 }
-function calcPintu(){
-  const cap=+pintuCapital.value,buy=+pintuBuy.value,sell=+pintuSell.value,mid=+pintuMid.value,cfx=+pintuCfx.value/100,tax=+pintuTax.value/100;
-  const usdt=(cap*(1-cfx))/buy; const portfolio=usdt*mid; const netSell=usdt*sell*(1-tax); const profit=netSell-cap;
-  show(`USDT didapat: <b>${fmt(usdt,8)}</b><br>Nilai portfolio harga tengah: <b>${fmtIDR(portfolio)}</b><br>Hasil jual bersih: <b>${fmtIDR(netSell)}</b><br>Untung/Rugi: <b class='${profit>=0?'positive':'negative'}'>${fmtIDR(profit)}</b>`,'pintuResult');
+function addHolding(){holdings.push({asset:$('pfAsset').value,qty:+$('pfQty').value,cost:+$('pfCost').value,time:now()}); save(); addHistory('Tambah Holding',holdings[holdings.length-1]); renderPortfolio();}
+function removeHolding(i){holdings.splice(i,1); save(); renderPortfolio();}
+function renderPortfolio(){
+  let totalCost=0,totalValue=0, html='';
+  holdings.forEach((h,i)=>{const p=prices[h.asset]?.idr||0, val=h.qty*p, pnl=val-h.cost; totalCost+=h.cost; totalValue+=val; html += `<div class="item"><div class="item-row"><strong>${h.asset.toUpperCase()}</strong><span>${fmtCoin(h.qty)}</span></div><div class="small">Modal ${fmtIDR(h.cost)} • Value ${fmtIDR(val)} • P/L <span class="${pnl>=0?'pos':'neg'}">${fmtIDR(pnl)}</span></div><button class="remove" onclick="removeHolding(${i})">Hapus</button></div>`});
+  const pnl=totalValue-totalCost;
+  $('portfolioResult').innerHTML=metric('Total modal',fmtIDR(totalCost))+metric('Total value live',fmtIDR(totalValue))+metric('Total profit/loss',fmtIDR(pnl),pnl>=0?'pos':'neg');
+  $('holdingList').innerHTML=html || '<p class="hint">Belum ada holding. Tambahkan aset pertamamu.</p>';
 }
-function calcPortfolio(){
-  const id=portfolioAsset.value, qty=+portfolioQty.value, avg=+portfolioAvg.value, current=prices[id]?.idr;
-  if(!current) return show('Data belum tersedia, tekan refresh.','portfolioResult');
-  const modal=qty*avg, value=qty*current, pnl=value-modal;
-  show(`Market price: <b>${fmtIDR(current)}</b><br>Modal: <b>${fmtIDR(modal)}</b><br>Nilai sekarang: <b>${fmtIDR(value)}</b><br>PNL: <b class='${pnl>=0?'positive':'negative'}'>${fmtIDR(pnl)} (${fmt(pnl/modal*100,2)}%)</b>`,'portfolioResult');
+function renderHistory(){
+  $('historyList').innerHTML = history.map(h=>`<div class="item"><div class="item-row"><strong>${h.type}</strong><span class="small">${h.time}</span></div><pre class="small">${JSON.stringify(h.data,null,2)}</pre></div>`).join('') || '<p class="hint">Belum ada riwayat.</p>';
 }
-document.querySelectorAll('.bottom-nav button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('.bottom-nav button,.panel').forEach(x=>x.classList.remove('active'));btn.classList.add('active');document.querySelector(`[data-panel="${btn.dataset.target}"]`).classList.add('active');}));
-document.getElementById('refreshBtn').onclick=fetchRates;
-if('serviceWorker' in navigator){navigator.serviceWorker.register('./sw.js');}
-fillSelects(); fetchRates(); setTimeout(calcProfit,600);
+function clearHistory(){ if(confirm('Hapus semua riwayat?')){history=[]; save(); renderHistory();} }
+
+document.querySelectorAll('#tabs button').forEach(btn=>btn.addEventListener('click',()=>{document.querySelectorAll('#tabs button').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); $(btn.dataset.tab).classList.add('active');}));
+$('refreshBtn').addEventListener('click',refreshPrices);
+if('serviceWorker' in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));}
+renderHistory(); renderPortfolio(); refreshPrices(); setInterval(refreshPrices,60000);

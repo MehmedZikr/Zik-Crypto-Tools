@@ -1,1 +1,13 @@
-{"name":"Zikro Crypto Tools","short_name":"CryptoTools","start_url":"./index.html","display":"standalone","background_color":"#0B1118","theme_color":"#0B1118","description":"Profit calculator, crypto converter, currency converter, BTC DCA, Pintu simulator, portfolio tracker.","icons":[{"src":"icons/icon-192.svg","sizes":"192x192","type":"image/svg+xml"},{"src":"icons/icon-512.svg","sizes":"512x512","type":"image/svg+xml"}]}
+{
+  "name":"Zikro Crypto Tools Pro",
+  "short_name":"Zik Crypto",
+  "start_url":"./index.html",
+  "display":"standalone",
+  "background_color":"#07111f",
+  "theme_color":"#0b1220",
+  "description":"Crypto profit calculator, Pintu simulator, USDT IDR converter, DCA BTC, portfolio tracker.",
+  "icons":[
+    {"src":"icons/icon-192.svg","sizes":"192x192","type":"image/svg+xml","purpose":"any maskable"},
+    {"src":"icons/icon-512.svg","sizes":"512x512","type":"image/svg+xml","purpose":"any maskable"}
+  ]
+}
