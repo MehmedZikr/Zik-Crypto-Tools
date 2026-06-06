@@ -12,19 +12,84 @@ function fillSelects(){
   const ff=document.getElementById('fiatFrom'), ft=document.getElementById('fiatTo');
   fiatList.forEach(c=>{ff.add(new Option(c,c)); ft.add(new Option(c,c));}); ff.value='USD'; ft.value='IDR';
 }
-async function fetchRates(){
+async function fetchJson(url){
+  const res = await fetch(url, { cache: 'no-store' });
+  if(!res.ok) throw new Error(`HTTP ${res.status}`);
+  return await res.json();
+}
+async function fetchFiatRates(){
+  // Primary: open.er-api.com supports IDR and many world currencies without API key.
   try{
-    document.getElementById('rateStatus').textContent='Mengambil data market real-time...';
-    const ids=Object.keys(cryptoList).join(',');
-    const res=await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=idr,usd,eur,jpy,sgd,myr&include_24hr_change=true`);
-    prices=await res.json();
-    const fres=await fetch('https://api.frankfurter.app/latest?from=USD');
-    const fdata=await fres.json(); fiatRates={USD:1,...fdata.rates,IDR: (prices.tether?.idr || 16000)};
+    const data = await fetchJson('https://open.er-api.com/v6/latest/USD');
+    if(data && data.rates && data.rates.IDR){
+      fiatRates = { USD: 1, ...data.rates };
+      return true;
+    }
+  }catch(e){}
+  // Fallback: Frankfurter does not always include every currency, so keep IDR from USDT if needed.
+  try{
+    const data = await fetchJson('https://api.frankfurter.app/latest?from=USD');
+    fiatRates = { USD: 1, ...data.rates };
+    return true;
+  }catch(e){}
+  return false;
+}
+async function fetchCryptoFromCoinGecko(){
+  const ids=Object.keys(cryptoList).join(',');
+  const data = await fetchJson(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=idr,usd,eur,jpy,sgd,myr&include_24hr_change=true`);
+  if(!data || !data.bitcoin) throw new Error('CoinGecko empty');
+  prices = data;
+  return true;
+}
+async function fetchCryptoFromBinance(){
+  const symbolMap = {
+    bitcoin:'BTCUSDT', ethereum:'ETHUSDT', solana:'SOLUSDT', tether:'USDTUSDT',
+    binancecoin:'BNBUSDT', 'usd-coin':'USDCUSDT', ripple:'XRPUSDT', cardano:'ADAUSDT', dogecoin:'DOGEUSDT'
+  };
+  const symbols = encodeURIComponent(JSON.stringify(Object.values(symbolMap).filter(s=>s!=='USDTUSDT')));
+  const data = await fetchJson(`https://api.binance.com/api/v3/ticker/24hr?symbols=${symbols}`);
+  const idr = fiatRates.IDR || 16000;
+  const out = {};
+  Object.entries(symbolMap).forEach(([id,sym])=>{
+    if(sym==='USDTUSDT'){
+      out[id] = { usd:1, idr:idr, eur:1/(fiatRates.EUR||1), jpy:fiatRates.JPY||0, sgd:fiatRates.SGD||0, myr:fiatRates.MYR||0, usd_24h_change:0 };
+      return;
+    }
+    const row = data.find(x=>x.symbol===sym);
+    if(row){
+      const usd = Number(row.lastPrice);
+      out[id] = {
+        usd,
+        idr: usd*idr,
+        eur: usd*(fiatRates.EUR||0),
+        jpy: usd*(fiatRates.JPY||0),
+        sgd: usd*(fiatRates.SGD||0),
+        myr: usd*(fiatRates.MYR||0),
+        usd_24h_change: Number(row.priceChangePercent)
+      };
+    }
+  });
+  if(!out.bitcoin) throw new Error('Binance empty');
+  prices = { ...prices, ...out };
+  return true;
+}
+async function fetchRates(){
+  const status = document.getElementById('rateStatus');
+  try{
+    status.textContent='Mengambil data market real-time...';
+    const fiatOk = await fetchFiatRates();
+    let cryptoOk = false;
+    try{ cryptoOk = await fetchCryptoFromCoinGecko(); }catch(e){}
+    if(!cryptoOk){ try{ cryptoOk = await fetchCryptoFromBinance(); }catch(e){} }
+    if(prices.tether?.idr && !fiatRates.IDR) fiatRates.IDR = prices.tether.idr;
     const btcIdr=prices.bitcoin?.idr; if(btcIdr) document.getElementById('dcaBtcPrice').value=Math.round(btcIdr);
-    document.getElementById('rateStatus').textContent='Data market aktif';
     document.getElementById('lastUpdated').textContent=new Date().toLocaleString('id-ID');
+    if(cryptoOk && fiatOk) status.textContent='Data market aktif';
+    else if(cryptoOk) status.textContent='Data crypto aktif, kurs fiat fallback';
+    else if(fiatOk) status.textContent='Kurs fiat aktif, data crypto belum tersedia';
+    else status.textContent='Gagal ambil data. Cek internet lalu refresh.';
   }catch(e){
-    document.getElementById('rateStatus').textContent='Gagal ambil data. Coba refresh.';
+    status.textContent='Gagal ambil data. Cek internet lalu refresh.';
   }
 }
 function show(html,id){document.getElementById(id).innerHTML=html;}
