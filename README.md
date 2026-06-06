@@ -1,22 +1,22 @@
-# Zikro Crypto Tools - Icon Ready Pack
+# Zikro Crypto Tools - Pure Z Icons
 
-Upload folder `icons/` and `manifest.json` to the root of your GitHub repository.
+Isi paket ini siap di-upload ke root repository GitHub.
 
-Also make sure these tags exist inside `<head>` in `index.html`:
+Struktur yang wajib ada setelah upload:
 
-```html
-<link rel="manifest" href="/manifest.json">
-<link rel="icon" type="image/png" sizes="192x192" href="/icons/icon-192.png">
-<link rel="icon" type="image/png" sizes="512x512" href="/icons/icon-512.png">
-<link rel="apple-touch-icon" sizes="180x180" href="/icons/apple-touch-icon.png">
-<meta name="theme-color" content="#000000">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Zikro Tools">
+```
+/manifest.json
+/icons/icon-192.png
+/icons/icon-512.png
+/icons/apple-touch-icon.png
+/icons/maskable-icon-512.png
 ```
 
-After Vercel deploys, test:
-- `/icons/icon-192.png`
-- `/manifest.json`
+Setelah upload & commit, tunggu Vercel deploy. Cek URL berikut:
 
-For iPhone: delete old Home Screen app, open Safari, then Share > Add to Home Screen.
+```
+https://zik-crypto-tools.vercel.app/icons/icon-192.png
+https://zik-crypto-tools.vercel.app/manifest.json
+```
+
+Untuk iPhone: hapus app lama dari Home Screen, buka Safari, refresh link Vercel, lalu Add to Home Screen lagi.
