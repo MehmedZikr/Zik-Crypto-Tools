@@ -8,22 +8,20 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Zik Crypto" />
   <title>Zikro Crypto Tools</title>
-  <link rel="manifest" href="./manifest.json" />
-  <link rel="icon" type="image/png" sizes="192x192" href="./icons/icon-192.png" />
-  <link rel="icon" type="image/png" sizes="512x512" href="./icons/icon-512.png" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./icons/icon-180.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div id="splash" class="splash"><img src="./icons/icon-180.png" alt="Zikro logo"><strong>ZIKRO</strong><span>CRYPTO TOOLS</span><small>Loading market data...</small></div>
+  <div id="splash" class="splash"><img src="icons/icon-180.png" alt="Zikro logo"><strong>ZIKRO</strong><span>CRYPTO TOOLS</span><small>Loading market data...</small></div>
   <main class="app">
     <header class="hero">
       <div class="hero-left">
-        <img class="app-logo" src="./icons/icon-180.png" alt="Zikro Crypto Tools logo">
+        <img class="app-logo" src="icons/icon-180.png" alt="Zikro Crypto Tools logo">
         <div>
           <p class="brand">Zikro Finance Lab</p>
           <h1>Zikro Crypto Tools</h1>
-          <p class="subtitle">Spot profit, Pintu simulator, live converter, DCA BTC, portfolio & riwayat otomatis.</p>
+          <p class="subtitle">Spot profit, Pintu simulator, live converter, DCA BTC, portfolio, HYPE live price & riwayat otomatis.</p>
         </div>
       </div>
       <button id="refreshBtn" class="icon-btn" title="Refresh data">↻</button>
@@ -32,7 +30,7 @@
     <section class="ticker-grid" id="tickerGrid">
       <div class="ticker"><span><b class="coin btc">₿</b> BTC</span><strong id="btcPrice">-</strong><small id="btcUsd">-</small></div>
       <div class="ticker"><span><b class="coin sol">◎</b> SOL</span><strong id="solPrice">-</strong><small id="solUsd">-</small></div>
-      <div class="ticker"><span><b class="coin eth">◆</b> ETH</span><strong id="ethPrice">-</strong><small id="ethUsd">-</small></div>
+      <div class="ticker hype-card"><span><b class="coin hype">H</b> HYPE</span><strong id="hypePrice">-</strong><small id="hypeUsd">-</small><em>Hyperliquid</em></div>
       <div class="ticker"><span><b class="coin usdt">₮</b> USDT/IDR</span><strong id="usdtIdr">-</strong><small id="statusText">Mengambil data...</small></div>
     </section>
     <section class="portfolio-widget">
@@ -78,7 +76,7 @@
       <p class="hint">Default sesuai rumus kamu: CFX buy 0.0111%, pajak sell 0.21%, spread buy/sell, valuasi portfolio pakai mid price.</p>
       <div class="grid two">
         <label>Modal IDR<input id="pintuCapital" type="text" inputmode="decimal" value="1000000"></label>
-        <label>Aset<select id="pintuAsset"><option value="tether">USDT</option><option value="bitcoin">BTC</option><option value="ethereum">ETH</option><option value="solana">SOL</option></select></label>
+        <label>Aset<select id="pintuAsset"><option value="tether">USDT</option><option value="bitcoin">BTC</option><option value="hyperliquid">HYPE</option><option value="solana">SOL</option></select></label>
         <label>Harga Buy IDR<input id="pintuBuy" type="text" inputmode="decimal" value="17790"></label>
         <label>Harga Sell IDR<input id="pintuSell" type="text" inputmode="decimal" value="18030"></label>
         <label>CFX Buy Fee %<input id="pintuCfx" type="text" inputmode="decimal" value="0.0111" step="0.0001"></label>
@@ -124,7 +122,7 @@
     <section class="panel" id="portfolio">
       <h2>📊 Portfolio Tracker</h2>
       <div class="grid three">
-        <label>Aset<select id="pfAsset"><option value="bitcoin">BTC</option><option value="ethereum">ETH</option><option value="solana">SOL</option><option value="tether">USDT</option></select></label>
+        <label>Aset<select id="pfAsset"><option value="bitcoin">BTC</option><option value="hyperliquid">HYPE</option><option value="solana">SOL</option><option value="tether">USDT</option></select></label>
         <label>Jumlah Koin<input id="pfQty" type="text" inputmode="decimal" step="0.00000001" value="0.01"></label>
         <label>Modal IDR<input id="pfCost" type="text" inputmode="decimal" value="1000000"></label>
       </div>
