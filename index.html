@@ -7,27 +7,45 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
   <meta name="apple-mobile-web-app-title" content="Zik Crypto" />
-  <title>Zikro Finance Lab</title>
+  <title>Zikro Crypto Tools</title>
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" sizes="180x180" href="icons/icon-180.png" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+  <div id="splash" class="splash"><img src="icons/icon-180.png" alt="Zikro logo"><strong>ZIKRO</strong><span>CRYPTO TOOLS</span><small>Loading market data...</small></div>
   <main class="app">
     <header class="hero">
-      <div>
-        <p class="brand">Zikro Finance Lab</p>
-        <h1>Crypto Tools Pro</h1>
-        <p class="subtitle">Spot profit, Pintu simulator, live converter, DCA BTC, portfolio & riwayat otomatis.</p>
+      <div class="hero-left">
+        <img class="app-logo" src="icons/icon-180.png" alt="Zikro Crypto Tools logo">
+        <div>
+          <p class="brand">Zikro Finance Lab</p>
+          <h1>Zikro Crypto Tools</h1>
+          <p class="subtitle">Spot profit, Pintu simulator, live converter, DCA BTC, portfolio & riwayat otomatis.</p>
+        </div>
       </div>
       <button id="refreshBtn" class="icon-btn" title="Refresh data">↻</button>
     </header>
 
     <section class="ticker-grid" id="tickerGrid">
-      <div class="ticker"><span>BTC</span><strong id="btcPrice">-</strong><small id="btcUsd">-</small></div>
-      <div class="ticker"><span>SOL</span><strong id="solPrice">-</strong><small id="solUsd">-</small></div>
-      <div class="ticker"><span>ETH</span><strong id="ethPrice">-</strong><small id="ethUsd">-</small></div>
-      <div class="ticker"><span>USDT/IDR</span><strong id="usdtIdr">-</strong><small id="statusText">Mengambil data...</small></div>
+      <div class="ticker"><span><b class="coin btc">₿</b> BTC</span><strong id="btcPrice">-</strong><small id="btcUsd">-</small></div>
+      <div class="ticker"><span><b class="coin sol">◎</b> SOL</span><strong id="solPrice">-</strong><small id="solUsd">-</small></div>
+      <div class="ticker"><span><b class="coin eth">◆</b> ETH</span><strong id="ethPrice">-</strong><small id="ethUsd">-</small></div>
+      <div class="ticker"><span><b class="coin usdt">₮</b> USDT/IDR</span><strong id="usdtIdr">-</strong><small id="statusText">Mengambil data...</small></div>
+    </section>
+    <section class="portfolio-widget">
+      <div>
+        <span>Portfolio Value</span>
+        <strong id="dashPortfolio">Rp0</strong>
+      </div>
+      <div>
+        <span>Total PnL</span>
+        <strong id="dashPnl" class="pos">Rp0</strong>
+      </div>
+      <div>
+        <span>Quick USDT</span>
+        <strong id="dashQuick">156.30 × 17.856</strong>
+      </div>
     </section>
 
     <section class="tabs" id="tabs">
@@ -42,12 +60,12 @@
     <section class="panel active" id="profit">
       <h2>📈 Profit Calculator Spot</h2>
       <div class="grid two">
-        <label>Modal / Buy Value IDR<input id="profitCapital" type="number" value="1000000"></label>
-        <label>Kurs USD/IDR<input id="profitRate" type="number" value="17790"></label>
-        <label>Buy Price USD<input id="profitBuy" type="number" value="71500"></label>
-        <label>Sell Price USD<input id="profitSell" type="number" value="74100"></label>
-        <label>Buy Fee %<input id="profitBuyFee" type="number" value="0.08" step="0.001"></label>
-        <label>Sell Fee %<input id="profitSellFee" type="number" value="0.08" step="0.001"></label>
+        <label>Modal / Buy Value IDR<input id="profitCapital" type="text" inputmode="decimal" value="1000000"></label>
+        <label>Kurs USD/IDR<input id="profitRate" type="text" inputmode="decimal" value="17790"></label>
+        <label>Buy Price USD<input id="profitBuy" type="text" inputmode="decimal" value="71500"></label>
+        <label>Sell Price USD<input id="profitSell" type="text" inputmode="decimal" value="74100"></label>
+        <label>Buy Fee %<input id="profitBuyFee" type="text" inputmode="decimal" value="0.08" step="0.001"></label>
+        <label>Sell Fee %<input id="profitSellFee" type="text" inputmode="decimal" value="0.08" step="0.001"></label>
       </div>
       <button class="primary" onclick="calcProfit(true)">Hitung & Simpan Riwayat</button>
       <div class="result" id="profitResult"></div>
@@ -57,12 +75,12 @@
       <h2>💰 Simulasi Pintu</h2>
       <p class="hint">Default sesuai rumus kamu: CFX buy 0.0111%, pajak sell 0.21%, spread buy/sell, valuasi portfolio pakai mid price.</p>
       <div class="grid two">
-        <label>Modal IDR<input id="pintuCapital" type="number" value="1000000"></label>
+        <label>Modal IDR<input id="pintuCapital" type="text" inputmode="decimal" value="1000000"></label>
         <label>Aset<select id="pintuAsset"><option value="tether">USDT</option><option value="bitcoin">BTC</option><option value="ethereum">ETH</option><option value="solana">SOL</option></select></label>
-        <label>Harga Buy IDR<input id="pintuBuy" type="number" value="17790"></label>
-        <label>Harga Sell IDR<input id="pintuSell" type="number" value="18030"></label>
-        <label>CFX Buy Fee %<input id="pintuCfx" type="number" value="0.0111" step="0.0001"></label>
-        <label>Pajak Sell %<input id="pintuTax" type="number" value="0.21" step="0.01"></label>
+        <label>Harga Buy IDR<input id="pintuBuy" type="text" inputmode="decimal" value="17790"></label>
+        <label>Harga Sell IDR<input id="pintuSell" type="text" inputmode="decimal" value="18030"></label>
+        <label>CFX Buy Fee %<input id="pintuCfx" type="text" inputmode="decimal" value="0.0111" step="0.0001"></label>
+        <label>Pajak Sell %<input id="pintuTax" type="text" inputmode="decimal" value="0.21" step="0.01"></label>
       </div>
       <button class="primary" onclick="calcPintu(true)">Hitung & Simpan Riwayat</button>
       <div class="result" id="pintuResult"></div>
@@ -70,11 +88,20 @@
 
     <section class="panel" id="usdt">
       <h2>💱 USDT ↔ IDR Calculator</h2>
+      <div class="quick-card">
+        <h3>⚡ Quick Calculator</h3>
+        <div class="grid two">
+          <label>Jumlah USDT<input id="quickUsdt" type="text" inputmode="decimal" value="156.30284059"></label>
+          <label>Harga IDR/USDT<input id="quickRate" type="text" inputmode="decimal" value="17856"></label>
+        </div>
+        <button class="primary mini" onclick="calcQuick(true)">Hitung Cepat & Simpan</button>
+        <div class="result compact" id="quickResult"></div>
+      </div>
       <div class="grid two">
-        <label>Jumlah<input id="convAmount" type="number" value="100" step="0.00000001"></label>
+        <label>Jumlah<input id="convAmount" type="text" inputmode="decimal" value="100" step="0.00000001"></label>
         <label>Arah<select id="convDirection"><option value="usdt-idr">USDT → IDR</option><option value="idr-usdt">IDR → USDT</option></select></label>
-        <label>Rate USDT/IDR<input id="convRate" type="number" value="17790"></label>
-        <label>Fee %<input id="convFee" type="number" value="0" step="0.001"></label>
+        <label>Rate USDT/IDR<input id="convRate" type="text" inputmode="decimal" value="17790"></label>
+        <label>Fee %<input id="convFee" type="text" inputmode="decimal" value="0" step="0.001"></label>
       </div>
       <button class="primary" onclick="calcUsdt(true)">Convert & Simpan</button>
       <div class="result" id="usdtResult"></div>
@@ -83,10 +110,10 @@
     <section class="panel" id="dca">
       <h2>🪙 BTC DCA Tracker</h2>
       <div class="grid two">
-        <label>DCA per periode IDR<input id="dcaAmount" type="number" value="500000"></label>
-        <label>Jumlah Periode<input id="dcaPeriods" type="number" value="12"></label>
-        <label>Harga BTC sekarang IDR<input id="dcaPrice" type="number" value="0"></label>
-        <label>Estimasi kenaikan/turun %<input id="dcaMove" type="number" value="0"></label>
+        <label>DCA per periode IDR<input id="dcaAmount" type="text" inputmode="decimal" value="500000"></label>
+        <label>Jumlah Periode<input id="dcaPeriods" type="text" inputmode="decimal" value="12"></label>
+        <label>Harga BTC sekarang IDR<input id="dcaPrice" type="text" inputmode="decimal" value="0"></label>
+        <label>Estimasi kenaikan/turun %<input id="dcaMove" type="text" inputmode="decimal" value="0"></label>
       </div>
       <button class="primary" onclick="calcDca(true)">Hitung DCA & Simpan</button>
       <div class="result" id="dcaResult"></div>
@@ -96,8 +123,8 @@
       <h2>📊 Portfolio Tracker</h2>
       <div class="grid three">
         <label>Aset<select id="pfAsset"><option value="bitcoin">BTC</option><option value="ethereum">ETH</option><option value="solana">SOL</option><option value="tether">USDT</option></select></label>
-        <label>Jumlah Koin<input id="pfQty" type="number" step="0.00000001" value="0.01"></label>
-        <label>Modal IDR<input id="pfCost" type="number" value="1000000"></label>
+        <label>Jumlah Koin<input id="pfQty" type="text" inputmode="decimal" step="0.00000001" value="0.01"></label>
+        <label>Modal IDR<input id="pfCost" type="text" inputmode="decimal" value="1000000"></label>
       </div>
       <button class="primary" onclick="addHolding()">Tambah Holding</button>
       <div class="result" id="portfolioResult"></div>
