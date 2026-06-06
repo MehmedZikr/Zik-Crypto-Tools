@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Zikro Crypto Tools</title>
+  <meta name="theme-color" content="#0B1118" />
+  <meta name="description" content="Kalkulator profit crypto, converter crypto & fiat, DCA BTC, simulasi Pintu, dan portfolio tracker." />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="icons/icon-192.svg" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Zikro Finance Lab</p>
+        <h1>Crypto Profit & Converter</h1>
+      </div>
+      <button class="ghost-btn" id="refreshBtn">↻</button>
+    </header>
+
+    <section class="market-card">
+      <div>
+        <span class="status-dot"></span>
+        <span id="rateStatus">Mengambil data market...</span>
+      </div>
+      <small id="lastUpdated">-</small>
+    </section>
+
+    <main>
+      <section class="panel active" data-panel="profit">
+        <h2>📈 Profit Calculator</h2>
+        <div class="grid two">
+          <label>Modal / Buy Value<input id="profitCapital" type="number" value="1000000"></label>
+          <label>Kurs USD/IDR<input id="profitFx" type="number" value="17790"></label>
+          <label>Buy Price USD<input id="profitBuy" type="number" value="71500"></label>
+          <label>Sell Price USD<input id="profitSell" type="number" value="74100"></label>
+          <label>Buy Fee %<input id="profitBuyFee" type="number" step="0.0001" value="0.08"></label>
+          <label>Sell Fee %<input id="profitSellFee" type="number" step="0.0001" value="0.08"></label>
+        </div>
+        <button class="primary" onclick="calcProfit()">Hitung Profit</button>
+        <div class="result" id="profitResult"></div>
+      </section>
+
+      <section class="panel" data-panel="crypto">
+        <h2>💱 Crypto Converter</h2>
+        <div class="grid two">
+          <label>Jumlah<input id="cryptoAmount" type="number" value="1"></label>
+          <label>Aset<select id="cryptoAsset"></select></label>
+          <label>Ke Mata Uang<select id="cryptoFiat"><option>IDR</option><option>USD</option><option>EUR</option><option>JPY</option><option>SGD</option><option>MYR</option></select></label>
+        </div>
+        <button class="primary" onclick="convertCrypto()">Convert</button>
+        <div class="result" id="cryptoResult"></div>
+      </section>
+
+      <section class="panel" data-panel="currency">
+        <h2>🌍 Currency Converter</h2>
+        <div class="grid two">
+          <label>Jumlah<input id="fiatAmount" type="number" value="1"></label>
+          <label>Dari<select id="fiatFrom"></select></label>
+          <label>Ke<select id="fiatTo"></select></label>
+        </div>
+        <button class="primary" onclick="convertFiat()">Convert</button>
+        <div class="result" id="fiatResult"></div>
+      </section>
+
+      <section class="panel" data-panel="dca">
+        <h2>🪙 DCA Calculator BTC</h2>
+        <div class="grid two">
+          <label>DCA per Bulan (IDR)<input id="dcaMonthly" type="number" value="1000000"></label>
+          <label>Durasi Bulan<input id="dcaMonths" type="number" value="12"></label>
+          <label>Harga BTC Saat Ini (IDR)<input id="dcaBtcPrice" type="number"></label>
+          <label>Estimasi Kenaikan %<input id="dcaGrowth" type="number" value="30"></label>
+        </div>
+        <button class="primary" onclick="calcDca()">Hitung DCA</button>
+        <div class="result" id="dcaResult"></div>
+      </section>
+
+      <section class="panel" data-panel="pintu">
+        <h2>💰 Pintu Simulator</h2>
+        <p class="hint">Default sesuai rumusmu: CFX buy 0.0111%, pajak sell 0.21%, dan spread buy/sell.</p>
+        <div class="grid two">
+          <label>Modal Beli IDR<input id="pintuCapital" type="number" value="1000000"></label>
+          <label>Harga Beli<input id="pintuBuy" type="number" value="17730"></label>
+          <label>Harga Jual<input id="pintuSell" type="number" value="18030"></label>
+          <label>Harga Tengah/Portfolio<input id="pintuMid" type="number" value="17880"></label>
+          <label>CFX Buy %<input id="pintuCfx" type="number" step="0.0001" value="0.0111"></label>
+          <label>Pajak Sell %<input id="pintuTax" type="number" step="0.0001" value="0.21"></label>
+        </div>
+        <button class="primary" onclick="calcPintu()">Simulasikan</button>
+        <div class="result" id="pintuResult"></div>
+      </section>
+
+      <section class="panel" data-panel="portfolio">
+        <h2>📊 Portfolio Tracker</h2>
+        <div class="grid two">
+          <label>Aset<select id="portfolioAsset"></select></label>
+          <label>Jumlah Coin<input id="portfolioQty" type="number" value="0.01"></label>
+          <label>Average Buy IDR<input id="portfolioAvg" type="number" value="1000000000"></label>
+        </div>
+        <button class="primary" onclick="calcPortfolio()">Cek Portfolio</button>
+        <div class="result" id="portfolioResult"></div>
+      </section>
+    </main>
+
+    <nav class="bottom-nav">
+      <button class="active" data-target="profit">📈<span>Profit</span></button>
+      <button data-target="crypto">💱<span>Crypto</span></button>
+      <button data-target="currency">🌍<span>Fiat</span></button>
+      <button data-target="dca">🪙<span>DCA</span></button>
+      <button data-target="pintu">💰<span>Pintu</span></button>
+      <button data-target="portfolio">📊<span>Port</span></button>
+    </nav>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
